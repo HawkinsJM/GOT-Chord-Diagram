@@ -39,6 +39,8 @@ var svg = d3.select("body").append("svg")
 d3.json("readme.json", function(error, imports) {
   if (error) throw error;
 
+  console.log(imports);
+
   // Creates 2 empty maps which are like dictionarys in Python.
   var indexByName = d3.map(),
       nameByIndex = d3.map(),
