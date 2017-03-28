@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Game of Thrones / A Song of Ice and Fire Fan Fiction Co-occurrences</title>
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.chord {
+  fill-opacity: .7;
+}
+
+
+#circle circle {
+  fill: none;
+  pointer-events: all;
+}
+
+.group path {
+  fill-opacity: .8;
+}
+
+path.chord {
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+#circle:hover path.fade {
+  display: none;
+}
+</style>
+<body>
+
+<h1>Game of Thrones / A Song of Ice and Fire Fan Fiction Co-occurrences</h1>
+
+<p>A chord diagram depicting how often characters from Game of Thrones (both the TV show and the A Song of Ice and Fire series) appear in fan fiction stories together. The dark red coloring indicates what percentage of the stories were rated mature. The characters are grouped by family, and the arcs and chords can be moused over to get additonal statistics.
+</p>
+
+<a href="http://www.fanfiction.net">FanFiction.net</a>
+<a href="https://github.com/HawkinsJM/GOT-Chord-Diagram">Github</a>
+
+<a href="https://www.linkedin.com/in/hawkinsjeffrey/">My LinkedIn</a>
+
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+var outerRadius = 960 / 2,
+    innerRadius = outerRadius - 130;
+
+var formatPercent = d3.format(".1%");
+
+var layout = d3.layout.chord()
+    // space between arcs
+    .padding(.04)
+    .sortSubgroups(d3.descending)
+    .sortChords(d3.descending);
+
+var arc = d3.svg.arc()
+    .innerRadius(innerRadius)
+    .outerRadius(innerRadius + 20);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", outerRadius * 2)
+    .attr("height", outerRadius * 2)
+    .append("g")
+    .attr("id", "circle")
+    .attr("transform", "translate(" + outerRadius + "," + outerRadius + ")");
+
+    svg.append("circle")
+        .attr("r", outerRadius);
+
+d3.json("tv_vis_data.json", function(error, imports) {
+  if (error) throw error;
+
+  // Creates 2 empty maps which are like dictionarys in Python.
+  var indexByName = d3.map(),
+      nameByIndex = d3.map(),
+      matureByTuple = d3.map(),
+      ratings_list = [],
+      matrix = [],
+      n = 0;
+      var colorByFamily = d3.map()
+      colorByFamily.set("Stark", d3.rgb(230,230,230))
+      colorByFamily.set("Lanister", d3.rgb(200,5,5))
+      colorByFamily.set("Original", d3.rgb(0,0,0))
+      colorByFamily.set("Other", d3.rgb(150,150,150))
+
+      var familyByName = d3.map()
+        familyByName.set("Robb S.","Stark")
+        familyByName.set("Jon S.","Stark")
+        familyByName.set("Sansa S.","Stark")
+        familyByName.set("Arya S.","Stark")
+        familyByName.set("Joffrey B.","Lanister")
+        familyByName.set("Cersei L.","Lanister")
+        familyByName.set("Jaime L.","Lanister")
+        familyByName.set("Tyrion L.","Lanister")
+        familyByName.set("Original Character","Original")
+
+  // Compute a unique index for each Character_A name.
+  imports.forEach(function(d) {
+    if (!indexByName.has(d = d.Character_A)) {
+      nameByIndex.set(n, d);
+      indexByName.set(d, n++);
+    }
+  });
+
+  imports.forEach(function(d) {
+    if (!matureByTuple.has(e = [d.Character_A,d.Character_B])) {
+      matureByTuple.set(e, d.rating);
+      ratings_list.push(d.rating)
+    }
+  });
+
+  // Construct a square matrix counting package imports.
+  imports.forEach(function(d) {
+    var cai = indexByName.get(d.Character_A),
+        row = matrix[cai],
+        char = d.Character_A;
+    if (!row) {
+     row = matrix[cai] = [];
+     for (var i = -1; ++i < n;) row[i] = 0;
+    }
+    imports.forEach(function(d) {
+      if (d.Character_A == char) {
+        row[indexByName.get(d.Character_B)] = d.count;
+      };
+     });
+  });
+
+  layout.matrix(matrix);
+  // Add a group per family.
+  var g = svg.selectAll(".group")
+      .data(layout.groups)
+    .enter().append("g")
+      .attr("class", "group")
+      .on("mouseover", mouseover);
+
+  // Add a mouseover title.
+  g.append("title").text(function(d, i) {
+    return nameByIndex.get(d.index) + " is in " + d.value + " stories with the characters shown here.";
+  });
+
+  g.append("path")
+      .attr("name", function(d) {
+        return nameByIndex.get(d.index); })
+      .attr("fam", function(d) {
+          return familyByName.get(nameByIndex.get(d.index));
+         })
+      .style("fill", function(d) {
+        var fam = familyByName.get(nameByIndex.get(d.index));
+        if (colorByFamily.has(fam)){
+          return colorByFamily.get(fam);
+        }
+        else {return colorByFamily.get("Other")}; })
+      .style("stroke", function(d) { return d3.rgb('gray').darker(); })
+      .attr("d", arc);
+
+      console.log(familyByName.get(nameByIndex.get(8)));
+      console.log(colorByFamily.get(familyByName.get("Jon S.")));
+console.log(g);
+
+
+  g.append("text")
+      .each(function(d) { d.angle = (d.startAngle + d.endAngle) / 2; })
+      .attr("dy", ".35em")
+      .attr("transform", function(d) {
+        return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+            + "translate(" + (innerRadius + 26) + ")"
+            + (d.angle > Math.PI ? "rotate(180)" : "");
+      })
+      .style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+      .text(function(d) {
+        var name = nameByIndex.get(d.index);
+        return name; });
+
+
+        g.append("text")
+            .each(function(d) { d.angle = (d.startAngle + d.endAngle) / 2; })
+            .attr("dy", "1.35em")
+            .attr("transform", function(d) {
+              return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+                  + "translate(" + (innerRadius + 26) + ")"
+                  + (d.angle > Math.PI ? "rotate(180)" : "");
+            })
+            .style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+            .text(function(d) {
+              var name = nameByIndex.get(d.index);
+
+              return "second line"
+              ; });
+
+    var chord = svg.selectAll(".chord")
+      .data(layout.chords)
+    .enter().append("path")
+      .attr("class", "chord")
+      .style("stroke", function(d) { return d3.rgb('gray').darker(); })
+      .style("fill", function(d) {
+        var mr_i = matureByTuple.get(
+          [nameByIndex.get(d.source.index),
+          nameByIndex.get(d.target.index)]
+          );
+        var bgray = [255,255,255];
+        var max = Math.max.apply(Math, ratings_list);
+        var min = Math.min.apply(Math, ratings_list);
+        var mr = (mr_i-min)/(max-min);
+        var b_red = [133,7,7];
+        return d3.rgb(
+          bgray[0] - (bgray[0]-b_red[0]) * mr,
+          bgray[1] - (bgray[1]-b_red[1]) * mr,
+          bgray[2] - (bgray[2]-b_red[2]) * mr
+        );
+
+       })
+      .attr("d", d3.svg.chord().radius(innerRadius));
+
+      // Add an elaborate mouseover title for each chord.
+      chord.append("title").text(function(d) {
+        return nameByIndex.get(d.source.index) + " and " + nameByIndex.get(d.target.index)+ " are in " + matrix[d.source.index][d.target.index] + " stories together, and " + formatPercent(matureByTuple.get(
+          [nameByIndex.get(d.source.index),
+          nameByIndex.get(d.target.index)]
+        )) + " of thier stories are rated mature."
+      });
+
+      function mouseover(d, i) {
+        chord.classed("fade", function(p) {
+          return p.source.index != i
+              && p.target.index != i;
+        });}
+});
+
+d3.select(self.frameElement).style("height", outerRadius * 2 + "px");
+
+
+</script>
+
+</body>
