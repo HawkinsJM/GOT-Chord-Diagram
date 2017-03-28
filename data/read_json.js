@@ -1,44 +1,8 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
-<style>
+console.log("Hello");
 
-body {
-  font: 10px sans-serif;
-}
-
-.chord {
-  fill-opacity: .67;
-}
-
-</style>
-<body>
-<script src="//d3js.org/d3.v3.min.js"></script>
-<script>
-
-var outerRadius = 960 / 2,
-    innerRadius = outerRadius - 130;
-
-var fill = d3.scale.category20c();
-
-var chord = d3.layout.chord()
-    // space between arcs
-    .padding(.04)
-    .sortSubgroups(d3.descending)
-    .sortChords(d3.descending);
-
-var arc = d3.svg.arc()
-    .innerRadius(innerRadius)
-    .outerRadius(innerRadius + 20);
-
-var svg = d3.select("body").append("svg")
-    .attr("width", outerRadius * 2)
-    .attr("height", outerRadius * 2)
-    .append("g")
-    .attr("transform", "translate(" + outerRadius + "," + outerRadius + ")");
 
 d3.json("readme.json", function(error, imports) {
   if (error) throw error;
-
 
   // Creates 2 empty maps which are like dictionarys in Python.
   var indexByName = d3.map(),
@@ -59,8 +23,6 @@ d3.json("readme.json", function(error, imports) {
     }
   });
 
-
-
   // Construct a square matrix counting package imports.
   imports.forEach(function(d) {
     var source = indexByName.get(name(d.name)),
@@ -71,7 +33,7 @@ d3.json("readme.json", function(error, imports) {
     }
     d.imports.forEach(function(d) { row[indexByName.get(name(d))]++; });
   });
-    console.log(matrix);
+
   chord.matrix(matrix);
 
   var g = svg.selectAll(".group")
@@ -99,13 +61,8 @@ d3.json("readme.json", function(error, imports) {
       .data(chord.chords)
     .enter().append("path")
       .attr("class", "chord")
-      
       .style("stroke", function(d) { return d3.rgb(fill(d.source.index)).darker(); })
       .style("fill", function(d) { return fill(d.source.index); })
       .attr("d", d3.svg.chord().radius(innerRadius));
 
 });
-
-d3.select(self.frameElement).style("height", outerRadius * 2 + "px");
-
-</script>
