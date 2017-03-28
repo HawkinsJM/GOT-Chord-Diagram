@@ -1,53 +1,48 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<title>Game of Thrones / A Song of Ice and Fire Fan Fiction Co-occurrences</title>
+<title>Game of Thrones / A Song of Ice and Fire: Fan Fiction Co-occurrences</title>
 <style>
+  @import "style.css";
 
-body {
-  font: 10px sans-serif;
-}
+  body {
+    text-align: center;
+  }
 
-.chord {
-  fill-opacity: .7;
-}
+  .chord {
+    fill-opacity: .7;
+  }
 
+  #circle circle {
+    fill: none;
+    pointer-events: all;
+  }
 
-#circle circle {
-  fill: none;
-  pointer-events: all;
-}
+  .group path {
+    fill-opacity: 1;
+  }
 
-.group path {
-  fill-opacity: .8;
-}
+  path.chord {
+    stroke-width: 1.25px;
+  }
 
-path.chord {
-  stroke: #000;
-  stroke-width: 1.5px;
-}
-
-#circle:hover path.fade {
-  display: none;
-}
+  #circle:hover path.fade {
+    display: none;
+  }
 </style>
 <body>
 
-<h1>Game of Thrones / A Song of Ice and Fire Fan Fiction Co-occurrences</h1>
-
-<p>A chord diagram depicting how often characters from Game of Thrones (both the TV show and the A Song of Ice and Fire series) appear in fan fiction stories together. The dark red coloring indicates what percentage of the stories were rated mature. The characters are grouped by family, and the arcs and chords can be moused over to get additonal statistics.
+<h1>
+Fan Fiction Co-occurrences in Game of Thrones</h1>
+<br>
+<p>A chord diagram depicting how often characters from Game of Thrones  appear in fan fiction stories together. The 13 most common connections between any characters from the book or tv series are shown. The characters are grouped by family, and the dark red coloring indicates what percentage of the stories were rated mature. The arcs and chords can be moused-over to highlight chords and view additional statistics.
 </p>
-
-<a href="http://www.fanfiction.net">FanFiction.net</a>
-<a href="https://github.com/HawkinsJM/GOT-Chord-Diagram">Github</a>
-
-<a href="https://www.linkedin.com/in/hawkinsjeffrey/">My LinkedIn</a>
-
 
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
+var winw = window.innerWidth*.9;
 
-var outerRadius = 960 / 2,
-    innerRadius = outerRadius - 130;
+var outerRadius = winw / 2,
+    innerRadius = outerRadius - winw/7.4;
 
 var formatPercent = d3.format(".1%");
 
@@ -63,15 +58,15 @@ var arc = d3.svg.arc()
 
 var svg = d3.select("body").append("svg")
     .attr("width", outerRadius * 2)
-    .attr("height", outerRadius * 2)
+    .attr("height", outerRadius * 2.1)
     .append("g")
     .attr("id", "circle")
-    .attr("transform", "translate(" + outerRadius + "," + outerRadius + ")");
+    .attr("transform", "translate(" + outerRadius + "," + (outerRadius*1.05) + ")");
 
     svg.append("circle")
         .attr("r", outerRadius);
 
-d3.json("tv_vis_data.json", function(error, imports) {
+d3.json("got_vis_data_trimmed.json", function(error, imports) {
   if (error) throw error;
 
   // Creates 2 empty maps which are like dictionarys in Python.
@@ -82,21 +77,41 @@ d3.json("tv_vis_data.json", function(error, imports) {
       matrix = [],
       n = 0;
       var colorByFamily = d3.map()
-      colorByFamily.set("Stark", d3.rgb(230,230,230))
-      colorByFamily.set("Lanister", d3.rgb(200,5,5))
-      colorByFamily.set("Original", d3.rgb(0,0,0))
-      colorByFamily.set("Other", d3.rgb(150,150,150))
+      //colorByFamily.set("Stark", d3.rgb(230,230,230))
+        colorByFamily.set("Stark", 'white')
+        colorByFamily.set("Lanister", d3.rgb(200,5,5))
+        colorByFamily.set("Original", d3.rgb(0,0,0))
+        colorByFamily.set("Other", d3.rgb(150,150,150))
 
       var familyByName = d3.map()
         familyByName.set("Robb S.","Stark")
         familyByName.set("Jon S.","Stark")
         familyByName.set("Sansa S.","Stark")
         familyByName.set("Arya S.","Stark")
+        familyByName.set("Catelyn S.","Stark")
+        familyByName.set("Eddard S./Ned","Stark")
+        familyByName.set("Lyanna S.","Stark")
         familyByName.set("Joffrey B.","Lanister")
         familyByName.set("Cersei L.","Lanister")
         familyByName.set("Jaime L.","Lanister")
         familyByName.set("Tyrion L.","Lanister")
-        familyByName.set("Original Character","Original")
+        familyByName.set("OC","Original")
+
+      var displayName = d3.map()
+        displayName.set("Sansa S.",["Sansa", "Stark"])
+        displayName.set("Robb S.",["Robb", "Stark"])
+        displayName.set("Jon S.",["Jon", "Snow"])
+        displayName.set("Arya S.",["Arya", "Stark"])
+        displayName.set("Catelyn S.",["Catelyn", "Stark"])
+        displayName.set("Eddard S./Ned",["Eddard", "Stark"])
+        displayName.set("Cersei L.",["Cersei", "Lanister"])
+        displayName.set("Jaime L.",["Jaime", "Lanister"])
+        displayName.set("Tyrion L.",["Tyrion", "Lanister"])
+        displayName.set("OC",["Original", "Character"])
+        displayName.set("Sandor C.",["Sandor", "Clegane"])
+        displayName.set("Gendry W.",["Gendry", ""])
+        displayName.set("Brienne of Tarth",["Brienne", "of Tarth"])
+        displayName.set("Daenerys T./Dany",["Daenerys", "Targaryen"])
 
   // Compute a unique index for each Character_A name.
   imports.forEach(function(d) {
@@ -154,14 +169,11 @@ d3.json("tv_vis_data.json", function(error, imports) {
           return colorByFamily.get(fam);
         }
         else {return colorByFamily.get("Other")}; })
-      .style("stroke", function(d) { return d3.rgb('gray').darker(); })
+      .style("stroke", d3.rgb(80,80,80))
+      .style("stroke-width", 1.25)
       .attr("d", arc);
 
-      console.log(familyByName.get(nameByIndex.get(8)));
-      console.log(colorByFamily.get(familyByName.get("Jon S.")));
-console.log(g);
-
-
+  //first line of text
   g.append("text")
       .each(function(d) { d.angle = (d.startAngle + d.endAngle) / 2; })
       .attr("dy", ".35em")
@@ -172,35 +184,34 @@ console.log(g);
       })
       .style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
       .text(function(d) {
-        var name = nameByIndex.get(d.index);
+        var name = displayName.get(nameByIndex.get(d.index))[0];
         return name; });
 
-
-        g.append("text")
-            .each(function(d) { d.angle = (d.startAngle + d.endAngle) / 2; })
-            .attr("dy", "1.35em")
-            .attr("transform", function(d) {
-              return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
-                  + "translate(" + (innerRadius + 26) + ")"
-                  + (d.angle > Math.PI ? "rotate(180)" : "");
-            })
-            .style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
-            .text(function(d) {
-              var name = nameByIndex.get(d.index);
-
-              return "second line"
-              ; });
+  //second line of text
+  g.append("text")
+      .each(function(d) { d.angle = (d.startAngle + d.endAngle) / 2; })
+      .attr("dy", "1.35em")
+      .attr("transform", function(d) {
+        return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+            + "translate(" + (innerRadius + 26) + ")"
+            + (d.angle > Math.PI ? "rotate(180)" : "");
+      })
+      .style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+      .text(function(d) {
+        var name = displayName.get(nameByIndex.get(d.index))[1];
+        return name; });
 
     var chord = svg.selectAll(".chord")
       .data(layout.chords)
     .enter().append("path")
       .attr("class", "chord")
-      .style("stroke", function(d) { return d3.rgb('gray').darker(); })
+      .style("stroke", d3.rgb(80,80,80))
       .style("fill", function(d) {
         var mr_i = matureByTuple.get(
           [nameByIndex.get(d.source.index),
           nameByIndex.get(d.target.index)]
           );
+        //sets color to transition from white to blood red with maturity
         var bgray = [255,255,255];
         var max = Math.max.apply(Math, ratings_list);
         var min = Math.min.apply(Math, ratings_list);
@@ -211,11 +222,10 @@ console.log(g);
           bgray[1] - (bgray[1]-b_red[1]) * mr,
           bgray[2] - (bgray[2]-b_red[2]) * mr
         );
-
        })
       .attr("d", d3.svg.chord().radius(innerRadius));
 
-      // Add an elaborate mouseover title for each chord.
+      // Add a mouseover title for each chord.
       chord.append("title").text(function(d) {
         return nameByIndex.get(d.source.index) + " and " + nameByIndex.get(d.target.index)+ " are in " + matrix[d.source.index][d.target.index] + " stories together, and " + formatPercent(matureByTuple.get(
           [nameByIndex.get(d.source.index),
@@ -223,6 +233,7 @@ console.log(g);
         )) + " of thier stories are rated mature."
       });
 
+      //hide chords when a characters arc is moused-over
       function mouseover(d, i) {
         chord.classed("fade", function(p) {
           return p.source.index != i
@@ -232,7 +243,29 @@ console.log(g);
 
 d3.select(self.frameElement).style("height", outerRadius * 2 + "px");
 
-
 </script>
+
+<h2>Notable Findings</h2>
+
+<ul>
+<li>
+The stories most commonly rated mature are those featuring parings of Jon, Robb, or an original character. Original Characters are those not from the GOT/ASoFaI universe, and are often the author of the story.
+</li>
+<li>
+Stories featuring Jaime and his sister Cersei are rated mature more often than those featuring Jaime and Brienne.
+</li>
+<li>
+Unlike the other Starks, the most frequent connection for Arya and Sansa is outside of their family, and they have stronger links to non-Stark characters than Starks.
+</li>
+</ul>
+
+<br>
+
+<p>
+<a href="http://www.fanfiction.net">FanFiction.net</a> /
+<a href="https://github.com/HawkinsJM/GOT-Chord-Diagram">Github</a> /
+<a href="https://twitter.com/Jeff897123041">Twitter</a> /
+<a href="https://www.linkedin.com/in/hawkinsjeffrey/"> My LinkedIn (SF-Based)</a>
+</p>
 
 </body>
